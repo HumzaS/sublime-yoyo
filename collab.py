@@ -4,23 +4,21 @@ import threading
 
 class CollabClientCommand(sublime_plugin.TextCommand):
 	def run(self, edit):
-		self.view.insert(edit, 0, "Client!")
 		s = socket.socket()
 		host = socket.gethostname()
-		port = 12346
+		port = 12345
 		try:
 			s.settimeout(2)
 			s.connect((host, port))
-			self.view.insert(edit, 0, s.recv(1024).decode('utf-8'))
-			s.close
+			self.view.insert(edit, 0, s.recv(1024).decode('utf-8') + "\n")
+			s.close()
+			print("connection closed")
 		except Exception as e:
-			self.view.insert(edit, 0, '\n'+e)
-			s.close
+			print("exception", e)
+			s.close()
 
 class CollabHostCommand(sublime_plugin.TextCommand):
-	# put this in a thread?
 	def run(self, edit):
-	#	self.view.insert(edit, 0, "Host!")
 		thread = serverThread(self.view)
 		thread.start()
 
@@ -32,25 +30,25 @@ class serverThread(threading.Thread):
 
 	def run(self):
 		s = socket.socket()
-		host = socket.gethostname()
-		port = 12346
-		s.bind((host,port))
+		s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+		port = 12345
+		s.bind((socket.gethostname(),port))
 
 		s.listen(5)
 		i = 0
-		while i < 8:
+		while i < 3:
+			i += 1
 			c, addr = s.accept()
-			#self.view.insert(edit, 0, 'Got connection from', addr)
-			i = i + 1
-			#self.view.insert(dit, 0, 'looping')
-			data = "thank you for connecting!"
-			#try:
-			c.send(data.encode())
-			#c.send(self.data.substr(sublime.Region(0,100)).encode())
-			c.close()
-			#except:
-			#	c.send(data.encode())
-			#	c.close()
+			print('Got connection from', addr)
+			try:
+				#print("region contents: ", self.data.substr(sublime.Region(0,100)))
+				#c.send("hello world {0}".format(i).encode())
+				c.send(self.data.substr(sublime.Region(0,100)).encode())
+				c.close()
+			except:
+				c.close()
+		print("shutting down !!!!!!!")
+
 class ScratchCommand(sublime_plugin.TextCommand):
 	def run(self, edit):
 		self.view.insert(edit,0,self.view.substr(sublime.Region(0,1000)))
